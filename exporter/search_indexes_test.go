@@ -4,11 +4,24 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
+
+type searchIndexListConn struct{}
+
+func (searchIndexListConn) Close() error                   { return nil }
+func (searchIndexListConn) Err() error                     { return nil }
+func (searchIndexListConn) Flush() error                   { return nil }
+func (searchIndexListConn) Receive() (any, error)          { return nil, nil }
+func (searchIndexListConn) Send(string, ...any) error      { return nil }
+func (searchIndexListConn) Do(string, ...any) (any, error) { return []any{[]byte("idx")}, nil }
+func (searchIndexListConn) ReceiveWithTimeout(time.Duration) (any, error) {
+	return nil, nil
+}
 
 func setupSearchIndex(t *testing.T, addr string) error {
 	c, err := redis.DialURL(addr)
@@ -108,4 +121,16 @@ func TestExtractSearchIndexesMetrics(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestExtractSearchIndexesMetricsInvalidRegexDoesNotPanic(t *testing.T) {
+	e, _ := NewRedisExporter("", Options{Namespace: "test", CheckSearchIndexes: "["})
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("invalid check-search-indexes regex should be logged and skipped, got panic: %v", r)
+		}
+	}()
+
+	e.extractSearchIndexesMetrics(make(chan prometheus.Metric), searchIndexListConn{})
 }

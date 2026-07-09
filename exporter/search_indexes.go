@@ -47,7 +47,11 @@ func (e *Exporter) extractSearchIndexesMetrics(ch chan<- prometheus.Metric, c re
 	}
 
 	// Get indexes list based on check-search-indexes regex
-	checkIndexRegex := regexp.MustCompile(e.options.CheckSearchIndexes)
+	checkIndexRegex, err := regexp.Compile(e.options.CheckSearchIndexes)
+	if err != nil {
+		log.Errorf("invalid check-search-indexes regex %q: %s", e.options.CheckSearchIndexes, err)
+		return
+	}
 	for _, index := range allSearchIndexes {
 		if checkIndexRegex.MatchString(index) {
 			searchIndexes = append(searchIndexes, index)
