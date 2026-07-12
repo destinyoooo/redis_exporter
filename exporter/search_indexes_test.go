@@ -120,3 +120,14 @@ func TestNewRedisExporterInvalidSearchIndexRegex(t *testing.T) {
 		t.Fatal("expected invalid check-search-indexes regex to fail at startup")
 	}
 }
+
+func TestNewRedisExporterValidSearchIndexRegex(t *testing.T) {
+	_, err := NewRedisExporter("", Options{
+		Namespace:                "test",
+		InclSearchIndexesMetrics: true,
+		CheckSearchIndexes:       "^idx:",
+	})
+	if err != nil {
+		t.Fatalf("expected valid check-search-indexes regex to succeed: %v", err)
+	}
+}
